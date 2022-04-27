@@ -10,29 +10,9 @@ const PRODUCTS = [
     {"category": "Electronics", "price": "$199.99", "stocked": true, "name": "Nexus 7"}
 ];
 
-class InputForm extends React.Component {
-    constructor(props) {
-        super(props);
-    }
 
-    render() {
-        const searchValue = this.props.searchValue;
-        return (
-            <form id="search-form">
-                <input placeholder="Search..." type="search" id="search-bar" value={searchValue} onChange={this.props.handleInputChange}></input>
-                <div id='checkbox'>
-                    <label><input type="checkbox" onChange={this.props.handleInputChange}></input>Only show products in stock</label>
-                </div>
-            </form>
-        ); 
-    }
-}
 
 class ProductRow extends React.Component {
-    constructor(props){
-        super(props);
-    }
-    
     render(){
         const product = this.props.product;
         const name = product.stocked ? product.name :
@@ -47,10 +27,6 @@ class ProductRow extends React.Component {
 }
 
 class CategoryRow extends React.Component {
-    constructor(props){
-        super(props);
-    }
-
     render(){
         const category = this.props.category;
         return (
@@ -62,16 +38,19 @@ class CategoryRow extends React.Component {
 }
 
 class Table extends React.Component {
-    constructor(props){
-        super(props);
-    }
-
     render(){
         const products = this.props.products;
         products.sort((a, b) => a.category > b.category ? 1 : (a.category < b.category ? -1 : 0));
         let rows = [];
         let last_category = null;
+        console.log(this.props.inStockOnly);
         products.forEach((product) => {
+            if(product.name.indexOf(this.props.searchText) === -1){
+                return;
+            }
+            if(this.props.inStockOnly && !product.stocked){
+                return;
+            }
             if(product.category !== last_category){
                 rows.push(
                     <CategoryRow category={product.category} key={product.category}/>
@@ -99,55 +78,86 @@ class Table extends React.Component {
     }
 }
 
+class InputForm extends React.Component {
+    constructor(props) {
+        super(props);
+        this.handleInStockChange = this.handleInStockChange.bind(this);
+        this.handleSearchChange = this.handleSearchChange.bind(this);
+    }
+
+    handleInStockChange(event){
+        this.props.onInStockChange(event.target.checked);
+    }
+
+    handleSearchChange(event){
+        this.props.onSearchChange(event.target.value);
+        console.log("here");
+    }
+
+    render() {
+        return (
+            <form id="search-form">
+                <input 
+                    placeholder="Search..." 
+                    type="search" 
+                    value={this.props.searchText}
+                    onChange={this.handleSearchChange}>
+                </input>
+                <div id='checkbox'>
+                    <label>
+                        <input 
+                            type="checkbox" 
+                            checked={this.props.inStockOnly}
+                            onChange={this.handleInStockChange}>
+                        </input>
+                        Only show products in stock
+                    </label>
+                </div>
+            </form>
+        ); 
+    }
+}
+
 class FilterableProductTable extends React.Component {
     constructor(props){
         super(props);
         this.state = {
-            searchInput: '',
-            onlyShowProductsInStock: false,
-            filteredProducts: this.props.products,
+            searchText: '',
+            inStockOnly: false,
         };
-        this.handleInputChange = this.handleInputChange.bind(this);
+        this.handleSearchChange = this.handleSearchChange.bind(this);
+        this.handleInStockChange = this.handleInStockChange.bind(this);
     }
 
-    handleInputChange(event){
-        const target = event.target;
-        let filteredProducts = this.props.products;
-        let searchInput = this.state.searchInput;
-        let onlyShowProductsInStock = this.state.onlyShowProductsInStock;
-
-        if(target.type === "checkbox"){
-            onlyShowProductsInStock = !this.state.onlyShowProductsInStock;
-            this.setState({onlyShowProductsInStock: !this.state.onlyShowProductsInStock});
-        }
-
-        if(target.type === "search"){
-            searchInput = event.target.value;
-            this.setState({
-                searchInput: event.target.value,
-            });
-        }
-
-        if(onlyShowProductsInStock){
-            filteredProducts = filteredProducts.filter((product) => product.stocked);
-        }
-        filteredProducts = filteredProducts.filter((product) => product.name.includes(searchInput));
-        console.log(filteredProducts);
+    handleSearchChange(searchText) {
         this.setState({
-            filteredProducts: filteredProducts
+            searchText: searchText
         });
     }
 
+    handleInStockChange(inStockOnly){
+        this.setState({
+            inStockOnly: inStockOnly
+        })
+    }
 
     render() {
         return (
             <div id="filterable-product-table">
-                <InputForm handleInputChange={this.handleInputChange}/>
-                <Table products={this.state.filteredProducts}/>
+                <InputForm 
+                    searchText={this.state.searchText}
+                    inStockOnly={this.state.inStockOnly}
+                    onInStockChange={this.handleInStockChange}
+                    onSearchChange={this.handleSearchChange}
+                />
+                <Table 
+                    products={this.props.products}
+                    searchText={this.state.searchText}
+                    inStockOnly={this.state.inStockOnly}
+                />
             </div>
         );
     }
-
 }
 
 
