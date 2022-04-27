@@ -1,6 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import './style.css';
 
 const PRODUCTS = [
     {"category": "Sporting Goods", "price": "$49.99", "stocked": true, "name": "Football"},
@@ -20,9 +19,9 @@ class InputForm extends React.Component {
         const searchValue = this.props.searchValue;
         return (
             <form id="search-form">
-                <input placeholder="Search..." type="search" id="search-bar" value={searchValue} onChange={this.props.handleInput}></input>
+                <input placeholder="Search..." type="search" id="search-bar" value={searchValue} onChange={this.props.handleInputChange}></input>
                 <div id='checkbox'>
-                    <label><input type="checkbox"></input>Only show products in stock</label>
+                    <label><input type="checkbox" onChange={this.props.handleInputChange}></input>Only show products in stock</label>
                 </div>
             </form>
         ); 
@@ -56,7 +55,7 @@ class CategoryRow extends React.Component {
         const category = this.props.category;
         return (
             <tr>
-                <th colspan="2">{category}</th>
+                <th colSpan="2">{category}</th>
             </tr>
         );
     }
@@ -105,23 +104,46 @@ class FilterableProductTable extends React.Component {
         super(props);
         this.state = {
             searchInput: '',
-            onlyShowProductsInStock: false
+            onlyShowProductsInStock: false,
+            filteredProducts: this.props.products,
         };
-        this.handleInput = this.handleInput.bind(this);
+        this.handleInputChange = this.handleInputChange.bind(this);
     }
 
-    handleSearchInput(event){
-        this.setState({searchInput: event.target.value});
+    handleInputChange(event){
+        const target = event.target;
+        let filteredProducts = this.props.products;
+        let searchInput = this.state.searchInput;
+        let onlyShowProductsInStock = this.state.onlyShowProductsInStock;
+
+        if(target.type === "checkbox"){
+            onlyShowProductsInStock = !this.state.onlyShowProductsInStock;
+            this.setState({onlyShowProductsInStock: !this.state.onlyShowProductsInStock});
+        }
+
+        if(target.type === "search"){
+            searchInput = event.target.value;
+            this.setState({
+                searchInput: event.target.value,
+            });
+        }
+
+        if(onlyShowProductsInStock){
+            filteredProducts = filteredProducts.filter((product) => product.stocked);
+        }
+        filteredProducts = filteredProducts.filter((product) => product.name.includes(searchInput));
+        console.log(filteredProducts);
+        this.setState({
+            filteredProducts: filteredProducts
+        });
     }
-    handleCheckboxInput(event){
-        this.setState({onlyShowProductsInStock: event.target.value})
-    }
+
 
     render() {
         return (
             <div id="filterable-product-table">
-                <InputForm handleInput={this.handleSearchInput}/>
-                <Table products={this.props.products}/>
+                <InputForm handleInputChange={this.handleInputChange}/>
+                <Table products={this.state.filteredProducts}/>
             </div>
         );
     }
